@@ -23,6 +23,18 @@ module TwoRegFifoTb;
   initial begin
     wrEn = 0;
     rdEn = 0;
+    #200;
+    @(negedge clk);
+    wrEn = 0;
+    rdEn = 0;
+    WrTask;      
+
+    forever begin
+      @(negedge clk);
+      wrEn = 0;
+      rdEn = 0;
+      //WrTask;      
+    end
   end
 
   TwoRegFifo  U_TwoRegFifo(
