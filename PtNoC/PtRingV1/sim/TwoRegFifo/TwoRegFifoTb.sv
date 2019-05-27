@@ -1,8 +1,10 @@
 module TwoRegFifoTb;
 
   logic clk,rst;
-  initial
+  initial begin
+    clk = 0;
     forever #10 clk = ~clk;
+  end
   initial begin
     rst = 0;
     #100 rst = 1;
