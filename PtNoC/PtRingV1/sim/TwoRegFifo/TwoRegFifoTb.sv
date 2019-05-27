@@ -26,15 +26,13 @@ module TwoRegFifoTb;
     #200;
     // full vector
     @(negedge clk);
-    wrEn = 0;
-    rdEn = 0;
     WrTask;      
     @(negedge clk);
-    wrEn = 0;
-    rdEn = 0;
     WrTask;      
     // empty vector
     @(negedge clk);
+    wrEn = 0;
+    rdEn = 0;
     @(negedge clk);
     @(negedge clk);
     wrEn = 0;
@@ -46,6 +44,8 @@ module TwoRegFifoTb;
     RdTask;      
     // 1 wr, 1 rd vector
     @(negedge clk);
+    wrEn = 0;
+    rdEn = 0;
     @(negedge clk);
     @(negedge clk);
     wrEn = 0;
@@ -57,6 +57,8 @@ module TwoRegFifoTb;
     RdTask;      
     // simultaneously wr & rd vector
     @(negedge clk);
+    wrEn = 0;
+    rdEn = 0;
     @(negedge clk);
     @(negedge clk);
     wrEn = 0;
@@ -67,7 +69,7 @@ module TwoRegFifoTb;
     rdEn = 0;
     RdTask; 
     WrTask;
-    
+
     forever begin
       @(negedge clk);
       wrEn = 0;
