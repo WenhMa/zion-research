@@ -12,7 +12,7 @@ module TwoRegFifo
   output logic [$bits(iWrDat)-1:0] oRdDat
 );
 
-  logic [$bits(iWrDat)-1:0][1:0] datReg; 
+  logic [1:0][$bits(iWrDat)-1:0] datReg; 
 
   always_ff@(posedge clk) begin
     if(!rst) begin
