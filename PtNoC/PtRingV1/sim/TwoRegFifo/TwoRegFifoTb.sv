@@ -48,8 +48,6 @@ module TwoRegFifoTb;
     rdEn = 0;
     @(negedge clk);
     @(negedge clk);
-    wrEn = 0;
-    rdEn = 0;
     WrTask;      
     @(negedge clk);
     wrEn = 0;
@@ -61,14 +59,33 @@ module TwoRegFifoTb;
     rdEn = 0;
     @(negedge clk);
     @(negedge clk);
-    wrEn = 0;
-    rdEn = 0;
     WrTask;      
     @(negedge clk);
     wrEn = 0;
     rdEn = 0;
     RdTask; 
     WrTask;
+    // rd when no data
+    @(negedge clk);
+    wrEn = 0;
+    rdEn = 0;
+    @(negedge clk);
+    @(negedge clk);
+    RdTask; 
+    // wr when full
+    @(negedge clk);
+    wrEn = 0;
+    rdEn = 0;
+    @(negedge clk);
+    @(negedge clk);
+    WrTask;      
+    @(negedge clk);
+    WrTask;  
+    @(negedge clk);
+    WrTask;  
+    @(negedge clk);
+    wrEn = 0;
+    rdEn = 0;
 
     forever begin
       @(negedge clk);
