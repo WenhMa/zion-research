@@ -52,6 +52,7 @@ module TwoRegFifoTb;
   initial begin
     $fsdbDumpfile("tb.fsdb")
     $fsdbDumpvars();
+    #30000 $finish();
   end
 
 endmodule
