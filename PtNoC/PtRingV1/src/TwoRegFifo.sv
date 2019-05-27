@@ -14,26 +14,27 @@ module TwoRegFifo
 
   logic [$bits(iWrDat)-1:0][1:0] datReg; 
 
-  always_ff (posedge clk) begin
+  always_ff@(posedge clk) begin
     if(!rst) begin
       datReg[0]  <= '0;
       oDatVld[0] <= '0;
       oFul       <= '0;
-    end else if(oFul & !WrEn & iRdEn) begin
+    end else if(oFul & iRdEn) begin
       datReg[0]  <= '0;
       oDatVld[0] <= '0;
       oFul       <= '0;
-    end else if(!oEmpty & iWrEn & ((!oFul & !iRdEn) | (oFul & iRdEn))) begin
+    end else if(!oEmpty & iWrEn & !oFul & !iRdEn) begin
       datReg[0]  <= iWrDat;
       oDatVld[0] <= '1;
       oFul       <= '1;    
     end
   end
 
-  always_ff (posedge clk) begin
+  always_ff@(posedge clk) begin
     if(!rst) begin
       datReg[1]  <= '0;
       oDatVld[1] <= '0;
+      
       oEmpty     <= '1;
     end else if(!oFul & iRdEn & !WrEn) begin
       datReg[1]  <= '0;
