@@ -36,11 +36,11 @@ module TwoRegFifo
       oDatVld[1] <= '0;
       
       oEmpty     <= '1;
-    end else if(!oFul & iRdEn & !WrEn) begin
+    end else if(!oFul & iRdEn & !iWrEn) begin
       datReg[1]  <= '0;
       oDatVld[1] <= '0;
       oEmpty     <= '1;
-    end else if(((!oFul & iRdEn) | oEmpty) & WrEn) begin
+    end else if(((!oFul & iRdEn) | oEmpty) & iWrEn) begin
       datReg[1]  <= iWrDat;
       oDatVld[1] <= '1;
       oEmpty     <= '0;
