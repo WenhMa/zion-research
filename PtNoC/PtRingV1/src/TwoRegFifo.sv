@@ -7,8 +7,7 @@ module TwoRegFifo
   input [WIDTH-1:0]                iWrDat,
   input                            iRdEn,
   output logic                     oFul,
-  output logic                     oEmpty,
-  output logic [1:0]               oDatVld,
+  output logic                     oNotEmpty,
   output logic [$bits(iWrDat)-1:0] oRdDat
 );
 
@@ -17,15 +16,12 @@ module TwoRegFifo
   always_ff@(posedge clk) begin
     if(!rst) begin
       datReg[0]  <= '0;
-      oDatVld[0] <= '0;
       oFul       <= '0;
     end else if(oFul & iRdEn) begin
       datReg[0]  <= '0;
-      oDatVld[0] <= '0;
       oFul       <= '0;
-    end else if(!oEmpty & iWrEn & !oFul & !iRdEn) begin
+    end else if(oNotEmpty & iWrEn & !oFul & !iRdEn) begin
       datReg[0]  <= iWrDat;
-      oDatVld[0] <= '1;
       oFul       <= '1;    
     end
   end
@@ -33,21 +29,16 @@ module TwoRegFifo
   always_ff@(posedge clk) begin
     if(!rst) begin
       datReg[1]  <= '0;
-      oDatVld[1] <= '0;
-      
-      oEmpty     <= '1;
+      oNotEmpty  <= '0;
     end else if(!oFul & iRdEn & !iWrEn) begin
       datReg[1]  <= '0;
-      oDatVld[1] <= '0;
-      oEmpty     <= '1;
-    end else if(((!oFul & iRdEn) | oEmpty) & iWrEn) begin
+      oNotEmpty  <= '0;
+    end else if(((!oFul & iRdEn) | !oNotEmpty) & iWrEn) begin
       datReg[1]  <= iWrDat;
-      oDatVld[1] <= '1;
-      oEmpty     <= '0;
+      oNotEmpty  <= '1;
     end else if(oFul & iRdEn) begin
       datReg[1]  <= datReg[0];
-      oDatVld[1] <= '1;
-      oEmpty     <= '0;
+      oNotEmpty  <= '1;
     end
   end
 

@@ -10,8 +10,7 @@ module TwoRegFifoTb;
     #100 rst = 1;
   end
 
-  logic       ful,empty,wrEn,rdEn;
-  logic [1:0] datVld;
+  logic       ful,notEmpty,wrEn,rdEn;
   logic [7:0] wrDat,rdDat;
 
   initial begin
@@ -102,8 +101,7 @@ module TwoRegFifoTb;
                 .iWrDat(wrDat),
                 .iRdEn(rdEn),
                 .oFul(ful),
-                .oEmpty(empty),
-                .oDatVld(datVld),
+                .oNotEmpty(notEmpty),
                 .oRdDat(rdDat)
   );
 
@@ -116,7 +114,7 @@ module TwoRegFifoTb;
   endtask
 
   task RdTask;
-    if(!empty) begin
+    if(notEmpty) begin
       rdEn = 1;
     end
   endtask
