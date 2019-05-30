@@ -1,9 +1,6 @@
 
 module PtrRouterTb;
 
-  localparam JUMP_STEP  = 4;
-  localparam DATA_WIDTH = 128;
-  localparam NODE_NUM   = 32;
   logic clk,rst;
   PtrNocRouterIf inputIf(),outputIf();
   PtrNocLocalIf localIf();
@@ -11,16 +8,10 @@ module PtrRouterTb;
   PtrRouter U_PtrRouter(
               .clk,
               .rst,
-              .bDatFromLast(inputIf.Receive),
+              .bDatFromLast(inputIf.receive),
               .bDat2Nxt(outputIf.Send),
               .bLocalDat(localIf.Router)
             );
-
-  initial begin
-    InputIfClr();
-    OutputIfClr();
-    LocalIfClr();
-  end
 
   initial begin
     clk = 0;
@@ -28,26 +19,20 @@ module PtrRouterTb;
   end
   initial begin
     rst = 0;
+    InputIfClr();
+    OutputIfClr();
+    LocalIfClr();
     #100 rst = 1;
   end
 
-  initial begin
-    $fsdbDumpfile("tb.fsdb");
-    $fsdbDumpvars(0,PtrRouterTb,"+all");
-    #300000;
-    $finish();
-  end
-
-
-
-  defparam inputIf.JUMP_STEP   = JUMP_STEP;
-  defparam outputIf.JUMP_STEP  = JUMP_STEP;
-  defparam inputIf.DATA_WIDTH  = DATA_WIDTH;
-  defparam outputIf.DATA_WIDTH = DATA_WIDTH;
-  defparam localIf.DATA_WIDTH  = DATA_WIDTH;
-  defparam inputIf.NODE_NUM    = NODE_NUM;
-  defparam outputIf.NODE_NUM   = NODE_NUM;
-  defparam localIf.NODE_NUM    = NODE_NUM;
+  defparam inputIf.JUMP_STEP   = 4;
+  defparam outputIf.JUMP_STEP  = 4;
+  defparam inputIf.DATA_WIDTH  = 128;
+  defparam outputIf.DATA_WIDTH = 128;
+  defparam localIf.DATA_WIDTH  = 128;
+  defparam inputIf.NODE_NUM    = 128;
+  defparam outputIf.NODE_NUM   = 128;
+  defparam localIf.NODE_NUM    = 128;
 
   task InputIfClr;
     inputIf.jumpCtrl  = '0;

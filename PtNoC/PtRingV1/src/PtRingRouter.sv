@@ -1,7 +1,7 @@
 interface PtrNocRouterIf
 #(JUMP_STEP  = "_",
   DATA_WIDTH = "_",
-  NODE_NUM   = "_"
+  NODE_NUM   = 8
 );
 
   typedef struct packed{
@@ -9,7 +9,7 @@ interface PtrNocRouterIf
     logic [JUMP_STEP-2:0] jumpCnt;
   }typedef_JumpCtrl;
   typedef_JumpCtrl jumpCtrl;
-  logic [$clog(NODE_NUM)-1:0] destCnt;
+  logic [$clog2(NODE_NUM)-1:0] destCnt;
   logic [DATA_WIDTH-1:0] dat;
 
   logic localFul,routerFul;
@@ -30,14 +30,14 @@ interface PtrNocLocalIf
 );
   logic r2lPktVld, r2lRd, l2rWr, l2rFul;
   logic [DATA_WIDTH-1:0] r2lDat, l2rDat;
-  logic [$clog(NODE_NUM)-1:0] destCnt;
+  logic [$clog2(NODE_NUM)-1:0] destCnt;
 
   modport Router(input r2lRd, l2rWr, l2rDat, destCnt,
                 output r2lPktVld, l2rFul, r2lDat
                 );
 
-  modport  LocalNode(input r2lPktVld, l2rFul, r2lDat
-                    output r2lRd, l2rWr, l2rDat, destCnt,
+  modport  LocalNode(input r2lPktVld, l2rFul, r2lDat,
+                    output r2lRd, l2rWr, l2rDat, destCnt
                     );
 
 endinterface: PtrNocLocalIf
@@ -45,14 +45,14 @@ endinterface: PtrNocLocalIf
 module PtrRouter
 (
   input clk,rst,
-  PtrNocRouterIf.Send    bDatFromLast,
-  PtrNocRouterIf.Receive bDat2Nxt,
+  PtrNocRouterIf.Receive bDatFromLast,
+  PtrNocRouterIf.Send    bDat2Nxt,
   PtrNocLocalIf.Router   bLocalDat
 );
 
   localparam DATA_WIDTH = $bits(bDatFromLast.dat);
-  localparam DEST_ADDR_WIDTH = $bits(bDatFromLast.desCnt);
-  localparam JUMP_STEP = $bits(bDatFromLast.jumpCnt)+1;
+  localparam DEST_ADDR_WIDTH = $bits(bDatFromLast.destCnt);
+  localparam JUMP_STEP = $bits(bDatFromLast.jumpCtrl.jumpCnt)+1;
   typedef bDatFromLast.typedef_JumpCtrl typedef_JumpCtrl;
   typedef_JumpCtrl jumpJumpCtrl, bufJumpCtrl;
   logic rbufNotEmpty, l2rBufNotEmpty;
@@ -66,7 +66,7 @@ module PtrRouter
   wire jumpEn        = jumpNxtRbufEn | jumpNxtLbufEn;
   assign jumpJumpCtrl.arrival     = bDatFromLast.jumpCtrl.nxtArrival;
   assign jumpJumpCtrl.nxtArrival  = bDatFromLast.jumpCtrl.jumpCnt[1] & bDatFromLast.jumpCtrl.nearDest;
-  assign jumpJumpCtrl.toNxtRouter = !(bDatFromLast.jumpCtrl.jumpCnt[0] & bDatFromLast.jumpCtrl.toNxtRouter);
+  assign jumpJumpCtrl.toNxtRouter = bDatFromLast.jumpCtrl.jumpCnt[0] & bDatFromLast.jumpCtrl.toNxtRouter;
   assign jumpJumpCtrl.jumpStop    = bDatFromLast.jumpCtrl.jumpCnt[0] & !bDatFromLast.jumpCtrl.nearDest;
   assign jumpJumpCtrl.nearDest    = bDatFromLast.jumpCtrl.nearDest;
   assign jumpJumpCtrl.jumpCnt     = {1'b0,bDatFromLast.jumpCtrl.jumpCnt[JUMP_STEP-2:1]};
@@ -78,20 +78,21 @@ module PtrRouter
   wire bufRd       = rbufRd | l2rBufRdTmp;
   assign {bufDestCnt,bufDat} =  (rbufRd)? {rbufDestCnt,rbufDat} :
                                 (l2rBufRdTmp)? {l2rBufDestCnt,l2rBufDat} : '0;
-  assign bufJumpCtrl.arrival     = (bufDestCnt == $bits(bufDestCnt)'d1);
-  assign bufJumpCtrl.nxtArrival  = (bufDestCnt == $bits(bufDestCnt)'d2);
-  assign bufJumpCtrl.toNxtRouter = (bufDestCnt > $bits(bufDestCnt)'d1);
+  wire bufDestVld   = bufDestCnt !='0;
+  assign bufJumpCtrl.arrival     = (bufDestCnt == 'd1);
+  assign bufJumpCtrl.nxtArrival  = (bufDestCnt == 'd2);
+  assign bufJumpCtrl.toNxtRouter = (bufDestCnt >  'd1);
   assign bufJumpCtrl.jumpStop    = '0;
-  assign bufJumpCtrl.nearDest    = (bufDestCnt <= JUMP_STEP) & (bufDestCnt != '0);
-  assign bufJumpCtrl.jumpCnt[JUMP_STEP-2] = (!bufJumpCtrl.nearDest | (bufDestCnt==JUMP_STEP-2));
-  for(genvar i=2;i<JUMP_STEP-2;i++)begin
+  assign bufJumpCtrl.nearDest    = (bufDestCnt <= JUMP_STEP) & bufDestVld;
+  assign bufJumpCtrl.jumpCnt[JUMP_STEP-2] = ((bufDestCnt > JUMP_STEP) | (bufDestCnt==JUMP_STEP-2));
+  for(genvar i=2;i<JUMP_STEP;i++)begin
     assign bufJumpCtrl.jumpCnt[i-2] = (bufDestCnt == i);
   end
 
   // output generate.
   assign bDat2Nxt.dat       = (jumpEn)? bDatFromLast.dat : bufDat;
-  assign bDat2Nxt.destCnt   = (jumpEn)? bDatFromLast.desCnt : 
-                              (!bufJumpCtrl.nearDest)? bufDestCnt-JUMP_STEP : '0;
+  assign bDat2Nxt.destCnt   = (jumpEn)? bDatFromLast.destCnt : 
+                              (!bufJumpCtrl.nearDest && bufDestVld)? bufDestCnt-JUMP_STEP : '0;
   assign bDat2Nxt.jumpCtrl  = (jumpEn)? jumpJumpCtrl : bufJumpCtrl;
 
   // buffers.
@@ -111,7 +112,7 @@ module PtrRouter
   TwoRegFifo  U_R2lBuf(
                 .clk,
                 .rst,
-                .iWrEn(bDatFromLast.arrival),
+                .iWrEn(bDatFromLast.jumpCtrl.arrival),
                 .iWrDat(bDatFromLast.dat),
                 .iRdEn(bLocalDat.r2lRd),
                 .oFul(bDatFromLast.localFul),
@@ -127,7 +128,7 @@ module PtrRouter
                 .iRdEn(l2rBufRd),
                 .oFul(bLocalDat.l2rFul),
                 .oNotEmpty(l2rBufNotEmpty),
-                .oRdDat({l2rBufDat,l2rBufDat})
+                .oRdDat({l2rBufDestCnt,l2rBufDat})
               );
 
   defparam U_RouterBuf.WIDTH = $bits(bDatFromLast.destCnt) + $bits(bDatFromLast.dat);
